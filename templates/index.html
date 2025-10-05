@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Lista de Presença</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Editor de Lista de Presença</h1>
+            <p>Congregação Cristã no Brasil - Bastos/SP</p>
+        </header>
+        
+        <div class="upload-section">
+            <div class="upload-section">
+			<label for="dateInput">Data:</label>
+			<input type="date" id="dateInput">
+			<label for="timeInput">Hora:</label>
+			<input type="time" id="timeInput">
+			<br><br>
+			<button class="btn btn-success" id="saveBtn">Salvar Documento</button>
+			<!-- NOVO BOTÃO -->
+			<button class="btn btn-success" id="saveComparecimentoBtn">Gerar Comparecimento</button>
+			<div id="feedback" class="feedback"></div>
+		</div>
+        </div>
+        
+        <h2>Músicos</h2>
+        <div class="table-container">
+            <table id="musiciansTable">
+                <thead>
+                    <tr>
+                        <th width="65%">Músicos - Nome</th>
+                        <th width="25%">Assinatura</th>
+                        <th width="10%">Remover</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <div class="action-buttons">
+                <button class="btn" id="addMusicianBtn">Adicionar Músico</button>
+            </div>
+        </div>
+
+        <!-- Inserção em massa músicos -->
+        <div class="bulk-section">
+            <h3>Adicionar em Massa (Músicos)</h3>
+            <textarea id="bulkMusicians" rows="5" placeholder="Cole aqui nomes separados por linha"></textarea>
+            <br>
+            <button class="btn" id="bulkAddMusiciansBtn">Adicionar em Massa</button>
+        </div>
+        
+        <h2>Organistas</h2>
+        <div class="table-container">
+            <table id="organistsTable">
+                <thead>
+                    <tr>
+                        <th width="65%">Organistas - Nome</th>
+                        <th width="25%">Assinatura</th>
+                        <th width="10%">Remover</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <div class="action-buttons">
+                <button class="btn" id="addOrganistBtn">Adicionar Organista</button>
+            </div>
+        </div>
+
+        <!-- Inserção em massa organistas -->
+        <div class="bulk-section">
+            <h3>Adicionar em Massa (Organistas)</h3>
+            <textarea id="bulkOrganists" rows="5" placeholder="Cole aqui nomes separados por linha"></textarea>
+            <br>
+            <button class="btn" id="bulkAddOrganistsBtn">Adicionar em Massa</button>
+        </div>
+        
+        <footer>
+            <p>Desenvolvido para a Congregação Cristã no Brasil - Bastos/SP</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const saveBtn = document.getElementById('saveBtn');
+            const musiciansTable = document.getElementById('musiciansTable');
+            const organistsTable = document.getElementById('organistsTable');
+            const addMusicianBtn = document.getElementById('addMusicianBtn');
+            const addOrganistBtn = document.getElementById('addOrganistBtn');
+            const bulkMusicians = document.getElementById('bulkMusicians');
+            const bulkAddMusiciansBtn = document.getElementById('bulkAddMusiciansBtn');
+            const bulkOrganists = document.getElementById('bulkOrganists');
+            const bulkAddOrganistsBtn = document.getElementById('bulkAddOrganistsBtn');
+            const feedback = document.getElementById('feedback');
+            const dateInput = document.getElementById('dateInput');
+            const timeInput = document.getElementById('timeInput');
+
+            function addRow(table, name) {
+                const tbody = table.querySelector('tbody');
+                const row = document.createElement('tr');
+
+                const nameCell = document.createElement('td');
+                nameCell.contentEditable = true;
+                nameCell.className = 'editable';
+                nameCell.textContent = name;
+                row.appendChild(nameCell);
+
+                const signatureCell = document.createElement('td');
+                signatureCell.className = 'signature-cell';
+                row.appendChild(signatureCell);
+
+                const removeCell = document.createElement('td');
+                const removeBtn = document.createElement('button');
+                removeBtn.textContent = "X";
+                removeBtn.className = "remove-btn";
+                removeBtn.onclick = () => row.remove();
+                removeCell.appendChild(removeBtn);
+                row.appendChild(removeCell);
+
+                tbody.appendChild(row);
+            }
+
+            // Adicionar um de cada vez
+            addMusicianBtn.addEventListener('click', () => addRow(musiciansTable, 'Novo Músico (Instrumento)'));
+            addOrganistBtn.addEventListener('click', () => addRow(organistsTable, 'Novo Organista'));
+
+            // Adicionar em massa
+            bulkAddMusiciansBtn.addEventListener("click", () => {
+                const lines = bulkMusicians.value.split("\n").map(l => l.trim()).filter(l => l);
+                lines.forEach(name => addRow(musiciansTable, name));
+                bulkMusicians.value = "";
+            });
+
+            bulkAddOrganistsBtn.addEventListener("click", () => {
+                const lines = bulkOrganists.value.split("\n").map(l => l.trim()).filter(l => l);
+                lines.forEach(name => addRow(organistsTable, name));
+                bulkOrganists.value = "";
+            });
+
+            saveBtn.addEventListener('click', saveDocument);
+
+            function saveDocument() {
+                let musicians = [];
+                musiciansTable.querySelectorAll('tbody tr').forEach(row => {
+                    const name = row.cells[0].textContent.trim();
+                    if (name) musicians.push(name);
+                });
+
+                let organists = [];
+                organistsTable.querySelectorAll('tbody tr').forEach(row => {
+                    const name = row.cells[0].textContent.trim();
+                    if (name) organists.push(name);
+                });
+
+                // Ordena alfabeticamente
+                musicians = musicians.sort((a, b) => a.localeCompare(b));
+                organists = organists.sort((a, b) => a.localeCompare(b));
+
+                // Data
+                const dateValue = dateInput.value;
+                const timeValue = timeInput.value;
+                let dateText = "";
+                if (dateValue) {
+                    const [year, month, day] = dateValue.split("-");
+                    dateText = `${day}/${month}/${year}`;
+                }
+                if (timeValue) {
+                    dateText += ` ÁS ${timeValue}`;
+                }
+
+                showFeedback('Salvando documento...', 'success');
+
+                fetch('/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ musicians, organists, dateText })
+                })
+                .then(response => response.blob())
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'LISTA_ENSAIO_LOCAL_EDITADO.docx';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+                    showFeedback('Documento salvo com sucesso!', 'success');
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    showFeedback('Erro ao salvar o documento.', 'error');
+                });
+            }
+
+            function showFeedback(message, type) {
+                feedback.textContent = message;
+                feedback.className = `feedback ${type}`;
+                feedback.style.display = 'block';
+                setTimeout(() => { feedback.style.display = 'none'; }, 4000);
+            }
+			
+			const saveComparecimentoBtn = document.getElementById('saveComparecimentoBtn');
+
+			// Nova função para gerar comparecimento
+			function saveComparecimento() {
+				const dateValue = dateInput.value;
+				let dateText = "";
+				if (dateValue) {
+					const [year, month, day] = dateValue.split("-");
+					dateText = `${day}/${month}/${year}`;
+				} else {
+					alert("Por favor, selecione uma data.");
+					return;
+				}
+
+				showFeedback('Gerando comparecimento...', 'success');
+
+				fetch('/save_comparecimento', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ dateText })
+				})
+				.then(response => response.blob())
+				.then(blob => {
+					const url = window.URL.createObjectURL(blob);
+					const a = document.createElement('a');
+					a.href = url;
+					a.download = 'COMPARCIMENTO_ENSAIO_LOCAL.docx';
+					document.body.appendChild(a);
+					a.click();
+					a.remove();
+					window.URL.revokeObjectURL(url);
+					showFeedback('Comparecimento gerado com sucesso!', 'success');
+				})
+				.catch(error => {
+					console.error('Erro:', error);
+					showFeedback('Erro ao gerar o comparecimento.', 'error');
+				});
+			}
+
+			saveComparecimentoBtn.addEventListener('click', saveComparecimento);
+		
+		});
+    </script>
+</body>
+</html>
