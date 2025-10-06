@@ -166,12 +166,7 @@ def save():
         download_name="LISTA_ENSAIO_LOCAL_EDITADO.docx",
         mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
-
-from docx import Document
-from docx.shared import Pt
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from io import BytesIO
-
+ 
 @app.route('/save_comparecimento', methods=['POST'])
 def save_comparecimento():
     data = request.get_json()
